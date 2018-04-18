@@ -1,0 +1,361 @@
+一、vue-router
+
+安装脚手架vue-cli构建vue项目以及附带安装vue-router；
+
+vue模板只能有一个根对象,多个元素要用一个div来或是别的标签来包裹全部的元素，否则报错
+报错写法：
+<template>
+  <div></div>
+  <h1>{{msg}}</h1>
+</template>
+
+正确写法：
+<template>
+  <div>
+      <h1>{{msg}}</h1>
+  </div>
+</template>
+
+
+vue-router使用过程：
+1.找到App.vue文件，添加router-link: <router-link to='/Hi'>Hi</router-link>
+
+2.在components文件下创建Hi.vue文件（仿照App.vue）
+
+3.进入router文件夹下的index.js：①引入H1路由：import Hi1 from '@/components/Hi1'；②配置router路径指向：routes: 
+[
+ {
+    path:"/Hi",
+    // name:"Hi", 
+    component:Hi,
+    children:[
+      {path:'/',component:Hi},
+      {path:'Hi1',component:Hi1},
+      {path:"Hi2",component:Hi2},
+    ]
+  }
+]
+解读：path是路由链接，component：路由文件名称，name：路由名称，children:子路由（注意：path子路由路径不用加/）;使用子路由时，需在父路由中插入<router-view></router-view>，子路由配置中，name在childen里配置(代码注释的name不需要写),同一个路径可以匹配多个路由，此时，匹配的优先级就按照路由的定义顺序：谁先定义的，谁的优先级就最高。
+
+
+
+
+vue-router参数传递
+①在router配置中定义name属性，然后在文件中使用$route.name来接收；
+②使用link传参：
+1. App.vue文件:<router-link :to="{name:'H1',params:{username:'fwrong'}}"></router-link>
+
+注意：①其中name的值与路由配置文件中的name相同；
+②to前面的冒号（:）别忘了；
+
+2.router文件夹下的index.js文件：
+ routes: [
+    {
+      path: '/',
+      name: 'HelloWorld',
+      component: HelloWorld
+    },
+    {
+      path:"/Hi",
+      // name:"Hi", 
+      component:Hi,
+      children:[
+        {path:'/',name:'h1',component:Hi},
+        {path:'Hi1',name:'Hi1',component:Hi1},
+        {path:"Hi2",name:'Hi2',component:Hi2},
+      ]
+    }
+  ]
+  注意：对应的name:Hi2与 App.vue文件中的name的值需要保持一致；
+
+  3.接收参数：
+  在对应的vue文件下（Hi2.vue）使用{{$route.params.usrname}}接收参数；注：是route不是router
+
+③vue-router 利用url传递参数
+
+：冒号的形式传递参数
+  ①在配置文件里以冒号的形式设置参数。我们在/src/router/index.js文件里配置路由。
+  {
+    path:'/params/:newsId/:newsTitle',
+     component:params
+  }
+  ②在src/components目录下建立我们params.vue组件，也可以说是页面。我们在页面里输出了url传递的的新闻ID和新闻标题。
+  <p>新闻ID：{{ $route.params.newsId}}</p>
+  <p>新闻标题：{{ $route.params.newsTitle}}</p>
+
+  ③在App.vue文件里加入我们的<router-view>标签
+
+  <router-link to="/params/188/fwrong website is very good">params</router-link>
+
+  正则表达式在URL传值中的应用
+  ①在路由配置文件里（/src/router/index.js）以圆括号的形式加入。加入了正则，我们再传递不满足正则的其他参数，params.vue组件就没有办法接收到。
+  path:'/params/:newsId(\\d+)/:newsTitle',
+
+
+  单页面多路由区域操作
+
+  ①在router文件夹index.js中配置路由：
+  routes: [
+    {
+      path: '/',
+      name: 'HelloWorld',
+      components:{
+        default:HelloWorld,
+        left:Hi3,
+        right:Hi4
+      } 
+    },
+    {
+      path:"/Hi",
+      // name:"Hi", 
+      component:Hi,
+      children:[
+        {path:'/',name:'h1',component:Hi},
+        {path:'Hi1',name:'Hi1',component:Hi1},
+        {path:"Hi2",name:'Hi2',component:Hi2},
+      ]
+    }
+  ]
+  注意：多个路由时需要使用components（多了个s）;其中left，right为路由文件（App.vue）中<router-view name='left'></router-view>的name的值；left，right的值为路由文件（Hi3.vue,Hi4.vue）的文件名称；
+
+  ②新建Hi3.vue,Hi4.vue路由文件
+
+  ③在App.vue中添加：
+   <router-view></router-view>
+    <router-view name="left"></router-view>
+    <router-view name="right"></router-view>
+
+路由的钩子函数
+
+1.在components文件夹index.js中写钩子函数，在index.js中不允许使用离开路由钩子函数；
+{
+  path:"/params/:newsId/:newsTitle",
+  component:params,
+  name:'Params',
+  beforeEnter:(to,from,next)=>{
+    console.log(to);
+    console.log(from);
+    next();
+  }
+ 
+}
+参数解析：
+to:指当前路由，是一对象，console.log(to);
+from:指从哪一个路由跳转过来的，是一对象，console.log(from);
+next()：可以传递参数，next(true)表示可以跳转，next(false)表示不允许跳转，当为false或者未写next()时,虽然路径会变换，但内容不会更新；此外，next()可以跟许多参数，具体参考文档；
+
+2.在路由文件中使用进入、离开路由钩子函数；
+//准备进入路由模板
+beforeRouteEnter:(to,from,next)=>{
+  // 在渲染该组件的对应路由被 confirm 前调用
+  // 不！能！获取组件实例 `this`
+  // 因为当守卫执行前，组件实例还没被创建；
+
+  console.log(to);
+  console.log(from);
+  next();
+},
+可以通过传一个回调给next获取this:
+beforeRouteEnter (to, from, next) {
+  next(vm => {
+    // 通过 `vm` 访问组件实例
+    //vm即为this，vm = this;
+  })
+}
+
+//准备离开路由模板
+beforeRouteLeave:(to,from,next)=>{
+  // 导航离开该组件的对应路由时调用
+  // 可以访问组件实例 `this`
+  console.log(to);
+  console.log(from);
+  next();
+}
+//路由模板（参数）发生改变时触发
+beforeRouteUpdate:(to,from,next)=>{
+  // 在当前路由改变，但是该组件被复用时调用
+  // 举例来说，对于一个带有动态参数的路径 /foo/:id，在 /foo/1 和 /foo/2 之间跳转的时候，
+  // 由于会渲染同样的 Foo 组件，因此组件实例会被复用。而这个钩子就会在这个情况下被调用。
+  // 可以访问组件实例 `this`
+  console.log(to);
+  console.log(from);
+  next();
+}
+
+
+滚动行为
+
+scrollBehavior (to, from, savedPosition) {
+  if (savedPosition) {
+    return savedPosition
+  } else {
+    return { x: 0, y: 0 }//x,y对应位置坐标
+  }
+}
+
+传入savedPosition,在按下 后退/前进 按钮时，就会像浏览器的原生表现那样;
+
+
+二、vuex项目状态管理
+
+1.使用vuex
+
+①引入vuex到项目中，使用npm包管理工具安装vuex
+npm install vuex --save
+②新建一个vuex文件夹（这个不是必须的），并在文件夹下新建store.js文件，文件中引入我们的vue和vuex。
+import Vue from 'vue';
+import Vuex from 'vuex';
+③使用vuex
+Vue.use(Vuex);
+
+2.实现数据共享
+①store.js文件中：
+import Vue from 'vue';
+import Vuex from "vuex";
+Vue.use(Vuex);
+const  state = {
+    count:1
+}
+const mutations = {
+    add(state){
+        state.count++;
+    },
+    reduce(state){
+        state.count--;
+    }
+}
+export default new Vuex.Store({
+    state,
+    mutations
+})
+
+②在components文件夹下新建Count.vue：
+<template>
+  <div>
+      <h2>{{msg}}</h2>
+      <button @click="$store.commit('reduce')">减</button>
+      <span>{{$store.state.count}}</span>
+      <button @click="$store.commit('add')">加</button>
+  </div>
+</template>
+<script>
+import store from '@/vuex/store';
+export default {
+  data(){
+      return{
+          msg:'Hello Vuex'
+      }
+  },
+  store
+}
+</script>
+
+3、state访问状态对象，将值赋给模板中的data值
+
+//方法一
+computed:{
+ count(){
+     return this.$store.state.count;
+ }
+},
+//方法二
+computed:mapState({
+count:(state)=>state.count
+}),
+//方法三
+computed: mapState(["count"])
+//方法四,方法三的另一种写法，为了能够在computed里面加入其它；
+computed:{...mapState(["count"])}
+
+其中count是store.js中共享的变量，在方法二、三中mapState为固定名称，不能更改；
+
+4、Mutations修改状态
+
+store.js文件：
+const mutations={
+  add(state,n){
+      state.count+=n;
+  },
+  reduce(state){
+      state.count--;
+  }
+}
+在Count.vue里修改按钮的commit( )方法传递的参数
+<p>
+   <button @click="$store.commit('add',10)">+</button>
+   <button @click="$store.commit('reduce')">-</button>
+</p>
+
+简写@click="reduce"：
+
+在模板Count.vue里用import 引入我们的mapMutations：
+
+import { mapState,mapMutations } from 'vuex';
+模板Count.vue里加入：
+ methods:mapMutations([
+        'add','reduce'
+])
+
+
+
+
+
+
+
+
+
+
+
+vue2中使用element-UI
+
+1.安装webpack，安装vue-cli，构建项目，安装依赖，运行项目：
+npm install -g webpack
+npm install -g vue-cli
+vue init webpack project-name  //创建一个基于webpack模板的名为project-name的项目
+cd project-name    //进入项目目录
+npm install        //安装项目依赖
+npm run dev        //运行项目
+
+2.安装element-ui
+npm install element-ui --save；
+参照 Element-UI 的官方文档上手开发。
+3.使用elment-ui
+//npm install style-loader -D
+//npm install css-loader -D
+//npm install file-loader -D
+
+4.main.js文件
+import Vue from 'vue';
+import ElementUI from 'element-ui';
+import 'element-ui/lib/theme-chalk/index.css';
+import App from './App.vue';
+
+Vue.use(ElementUI);
+
+注意：①import 'element-ui/lib/theme-chalk/index.css';以前的版本是：import 'element-ui/lib/theme-default/这是个坑
+②import ElementUI from 'element-ui'路径不能写成'./element-ui'的形式
+
+5.对着element-ui文档撸代码
+
+
+
+webpack打包步骤：
+1.打开config里面的index.js,修改build对象里面的assetsPublicPath: '/'为assetsPublicPath: './'（上线时改成实际网址）;
+2.控制台输入命令：npm run build,会有警告需要服务器，无视。成功后多一个文件夹dist,将此文件夹丢到服务器。
+
+
+
+
+全家桶实战笔记：
+
+①<template slot-scope='字符串'><template>而不是<template scope='字符串'><template>
+②在使用document.body.clientHeight获取屏幕高度或宽度时，需要设置HTML，body的宽高为100%；
+③使用v-for时需用:key='item中惟一的字段'
+
+
+
+one: 我叫xxx,毕业于龙岩学院计算机科学与技术专业;
+two: 在公司里主要负责公司业务的前端相关工作；有参与过几个项目的设计与开发，与团队一起讨论产品定位与实现，前端页面逻辑实现与搭建,小程序的开发，webapp的开发，公众号部分实现；
+three: 涉及的技术主要有js,html,css，PHP,svn等，项目中涉及到的技术框架和库主要有mui,vue2全家桶，脚手架,jquery,bootstrap等；
+four：工作中用到的大部分技术都是在入职后在团队中学到的，平常没事喜欢逛逛社区，看一些技术贴，比如像github，知乎那些的，对es6有一定了解，并在开发中使用一些，玩过css预编译less，sass等；
+
